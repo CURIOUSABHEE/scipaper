@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Content Analyzer</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.5.1/mammoth.browser.min.js"></script>
+
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding-top: 40px;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 700px;
+            text-align: center;
+        }
+        h1 { color: #2c3e50; margin-bottom: 10px; }
+        p { color: #7f8c8d; margin-bottom: 30px; }
+
+        #drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            transition: border-color 0.3s, background-color 0.3s;
+            position: relative; /* Needed for the overlay */
+        }
+        #drop-zone.drag-over {
+            border-color: #3498db;
+            background-color: #f0f8ff;
+        }
+        #processing-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: none; /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #2c3e50;
+        }
+
+        textarea {
+            width: 100%;
+            height: 250px;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        textarea:focus {
+            outline: none;
+        }
+        button {
+            padding: 15px;
+            width: 100%;
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #28a745;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+        }
+        button:hover { background-color: #218838; }
+        button:disabled { background-color: #a5d6a7; cursor: not-allowed; }
+        #analysis-result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #e9ecef;
+            display: none;
+            text-align: left;
+        }
+        #analysis-result h3 { margin-top: 0; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 2s linear infinite; margin: 10px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .home-link { display: block; margin-top: 20px; color: #3498db; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Content Analyzer 🔎</h1>
+        <p>Drag & drop a file (.pdf, .docx, .txt) below, or paste your content to get started.</p>
+
+        <div id="drop-zone">
+            <div id="processing-overlay">Processing file...</div>
+            <textarea id="text-input" placeholder="Drop file here or paste text..."></textarea>
+        </div>
+
+        <button id="analyze-btn">Analyze Text</button>
+
+        <div id="analysis-result"></div>
+
+        <a href="{{ url_for('home') }}" class="home-link">← Back to Generator</a>
+    </div>
+
+<script>
+    // Set the worker source for pdf.js
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
+
+    const dropZone = document.getElementById('drop-zone');
+    const textInput = document.getElementById('text-input');
+    const processingOverlay = document.getElementById('processing-overlay');
+    const analyzeBtn = document.getElementById('analyze-btn');
+
+    // --- Drag and Drop Event Listeners ---
+    dropZone.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('drag-over');
+    });
+
+    dropZone.addEventListener('drop', (event) => {
+        event.preventDefault();
+        dropZone.classList.remove('drag-over');
+
+        const files = event.dataTransfer.files;
+        if (files.length > 0) {
+            handleFile(files[0]);
+        }
+    });
+
+    // --- Main File Handling Logic ---
+    const handleFile = async (file) => {
+        processingOverlay.style.display = 'flex';
+        textInput.value = ''; // Clear previous text
+
+        try {
+            const extension = file.name.split('.').pop().toLowerCase();
+
+            if (extension === 'pdf') {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+                let fullText = '';
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    fullText += textContent.items.map(item => item.str).join(' ') + '\n';
+                }
+                textInput.value = fullText;
+
+            } else if (extension === 'docx') {
+                const arrayBuffer = await file.arrayBuffer();
+                const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                textInput.value = result.value;
+
+            } else if (['txt', 'md', 'text'].includes(extension)) {
+                textInput.value = await file.text();
+
+            } else {
+                alert('Unsupported file type. Please use .pdf, .docx, or .txt files.');
+            }
+        } catch (error) {
+            console.error('Error processing file:', error);
+            alert('Could not read the file. It might be corrupted or protected.');
+        } finally {
+            processingOverlay.style.display = 'none'; // Hide overlay
+        }
+    };
+
+    // --- Analysis Button Click Logic (unchanged) ---
+    analyzeBtn.addEventListener('click', function() {
+        if (textInput.value.trim() === "") {
+            alert("Please paste some text or drop a file before analyzing.");
+            return;
+        }
+        const resultContainer = document.getElementById('analysis-result');
+        analyzeBtn.disabled = true;
+        resultContainer.style.display = 'block';
+        resultContainer.innerHTML = '<h3>Analysis in Progress...</h3><div class="loader"></div>';
+        fetch('/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: textInput.value }),
+        })
+        .then(response => {
+            if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) throw new Error(data.error);
+            resultContainer.innerHTML = `<h3>🤖 Analysis Result</h3><p><strong>AI-Generated Score:</strong> ${data.score || 0} / 100</p><p><strong>Confidence:</strong> ${data.confidence || 'N/A'}</p><p><strong>Reasoning:</strong> ${data.reasoning || 'No reasoning provided.'}</p>`;
+        })
+        .catch(error => {
+            console.error('Analysis Error:', error);
+            resultContainer.innerHTML = `<h3>Analysis Failed</h3><p style="color: red;">${error.message}</p>`;
+        })
+        .finally(() => {
+            analyzeBtn.disabled = false;
+        });
+    });
+</script>
+
+</body>
+</html>

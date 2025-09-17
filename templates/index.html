@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Research Paper Generator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        p {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            text-align: left;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #34495e;
+        }
+        input[type="text"], select {
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            width: 100%;
+            box-sizing: border-box; /* Important for padding */
+        }
+        button {
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #3498db;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        /* Flash message styling */
+        .flash {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .flash.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .divider {
+            border-top: 1px solid #eee;
+            margin: 30px 0;
+        }
+        .secondary-action a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .secondary-action a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Research Paper Generator 🔬</h1>
+        <p>Enter any topic and let AI generate a complete, structured research paper for you.</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('generate_paper') }}" method="post">
+            <label for="user_input">Enter Paper Topic:</label>
+            <input type="text" id="user_input" name="user_input" placeholder="e.g., 'The Ethics of AI in Healthcare'" required>
+
+            <label for="output_format">Select Output Format:</label>
+            <select id="output_format" name="output_format">
+                <option value="pdf">PDF</option>
+                <option value="latex">LaTeX (.tex)</option>
+            </select>
+
+            <button type="submit">Generate Paper</button>
+        </form>
+
+        <div class="divider"></div>
+        <p class="secondary-action">
+            Have a paper already?
+            <a href="{{ url_for('analyzer_page') }}">Analyze your own text here</a>.
+        </p>
+        </div>
+</body>
+</html>
