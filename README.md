@@ -31,6 +31,10 @@ The platform offers features for **paper organization, metadata extraction, sear
 - Web browser (Chrome, Firefox, Edge, etc.)  
 
 ---
+## 🚀 Live Deployment
+You can access the live version of **scipaper** here:  
+[https://scipaper-3jsr.onrender.com](https://scipaper-3jsr.onrender.com)  
+or simply click 👉 [Visit scipaper](https://scipaper-3jsr.onrender.com)
 
 ## 🔧 Installation
 
@@ -39,3 +43,4 @@ Clone the repository:
 ```bash
 git clone https://github.com/CURIOUSABHEE/scipaper.git
 cd scipaper
+
