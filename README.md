@@ -32,6 +32,7 @@ The platform offers features for **paper organization, metadata extraction, sear
 
 ---
 ## 🚀 Live Deployment
+Wait for few seconds, as it could take time to load the application.
 You can access the live version of **scipaper** here:  
 [https://scipaper-3jsr.onrender.com](https://scipaper-3jsr.onrender.com)  
 or simply click 👉 [Visit scipaper](https://scipaper-3jsr.onrender.com)
